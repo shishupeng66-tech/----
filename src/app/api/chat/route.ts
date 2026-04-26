@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { LLMClient } from 'coze-coding-dev-sdk';
-import type { ChatRequest, ChatResponse } from '@/types/chat';
+import { openRouterChat } from '@/lib/ai/providers/openrouter';
+import type { ChatRequest as BizChatRequest, ChatResponse } from '@/types/chat';
 
 export const runtime = 'nodejs';
-export const maxDuration = 30;
+export const maxDuration = 60; // 调高超时限制，Gemini 推理可能较慢
 
 export async function POST(request: NextRequest) {
   try {
-    const body: ChatRequest = await request.json();
+    const body: BizChatRequest = await request.json();
     const { systemPrompt, messages } = body;
 
     if (!systemPrompt || !messages) {
@@ -17,28 +17,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const client = new LLMClient();
-    
-    // 构建对话消息
-    const chatMessages = [
-      { role: 'system' as const, content: systemPrompt },
-      ...messages.map((msg) => ({
-        role: msg.role as 'user' | 'assistant',
-        content: msg.content,
-      })),
-    ];
-
-    // 调用 LLM (使用默认模型)
-    const response = await client.invoke(chatMessages);
-
-    const reply = response.content || '...';
+    // 调用新 Provider
+    const { reply } = await openRouterChat({
+      systemPrompt,
+      messages: messages.map(m => ({
+        role: m.role === 'assistant' ? 'assistant' : 'user',
+        content: m.content
+      }))
+    });
 
     return NextResponse.json<ChatResponse>({ reply });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Chat API error:', error);
+    
+    // 错误分类处理
+    const status = error.status || 500;
+    let message = '系统开小差了，请稍后再试';
+    
+    if (status === 401) message = 'AI 服务授权失败，请检查配置';
+    if (status === 429) message = '说话太快啦，我需要休息一下';
+    if (error.message?.includes('timeout')) message = '我还在思考中，请重新发送试试';
+
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { error: message, originalError: error.message },
+      { status }
     );
   }
 }

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ImageGenerationClient } from 'coze-coding-dev-sdk';
+import { arkImageGenerate } from '@/lib/ai/providers/ark';
 import type { ImageRequest, ImageResponse } from '@/types/chat';
 
 export const runtime = 'nodejs';
-export const maxDuration = 30;
+export const maxDuration = 60; // 生图可能较慢
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,36 +17,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const client = new ImageGenerationClient();
-
-    // 调用图像生成
-    const response = await client.generate({
-      prompt,
-      size: '1024x1024',
-      watermark: false,
-      responseFormat: 'url',
-    });
-
-    const helper = client.getResponseHelper(response);
-    
-    // 检查是否有错误
-    if (!helper.success || helper.errorMessages.length > 0) {
-      console.error('Image generation error:', helper.errorMessages);
-      throw new Error(helper.errorMessages[0] || 'Image generation failed');
-    }
-    
-    const imageUri = helper.imageUrls?.[0];
-
-    if (!imageUri) {
-      throw new Error('No image URL returned');
-    }
+    // 调用新 Provider (火山引擎/豆包)
+    const { imageUri } = await arkImageGenerate({ prompt });
 
     return NextResponse.json<ImageResponse>({ imageUri });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Image API error:', error);
+    
+    const status = error.status || 500;
+    let message = '画不出画了，等我缓一缓～';
+    
+    if (status === 401) message = '图像服务授权失效';
+    if (status === 429) message = '画得太快啦，纸用完啦';
+
     return NextResponse.json(
-      { error: 'Image generation failed' },
-      { status: 500 }
+      { error: message, originalError: error.message },
+      { status }
     );
   }
 }
