@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { openRouterChat } from '@/lib/ai/providers/openrouter';
+import { arkChat } from '@/lib/ai/providers/arkChat';
 import type { ChatRequest as BizChatRequest, ChatResponse } from '@/types/chat';
 
 export const runtime = 'nodejs';
-export const maxDuration = 60; // 调高超时限制，Gemini 推理可能较慢
+export const maxDuration = 60; 
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,8 +17,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 调用新 Provider
-    const { reply } = await openRouterChat({
+    // 调用火山引擎/豆包 Provider
+    const { reply } = await arkChat({
       systemPrompt,
       messages: messages.map(m => ({
         role: m.role === 'assistant' ? 'assistant' : 'user',
@@ -30,13 +30,12 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Chat API error:', error);
     
-    // 错误分类处理
     const status = error.status || 500;
-    let message = '系统开小差了，请稍后再试';
+    let message = '我现在有点累了，稍后再找我好吗？'; // 更符合角色扮演的错误提示
     
-    if (status === 401) message = 'AI 服务授权失败，请检查配置';
-    if (status === 429) message = '说话太快啦，我需要休息一下';
-    if (error.message?.includes('timeout')) message = '我还在思考中，请重新发送试试';
+    if (status === 401) message = '身份验证失败，请检查 API 配置';
+    if (status === 429) message = '你回得太快啦，我还没想好怎么说～';
+    if (error.message?.includes('timeout')) message = '信号好像不太好，我刚才没听清...';
 
     return NextResponse.json(
       { error: message, originalError: error.message },
