@@ -4,15 +4,19 @@ import { useChat } from '@/context/ChatContext';
 import { CharacterSelect } from './CharacterSelect';
 import { ChatScreen } from './ChatScreen';
 import { characterList } from '@/data/characters';
+import LoginButton from './LoginButton';
 
 export function HomePage() {
   const { chatState } = useChat();
 
-  // 如果已选择角色，显示聊天界面
-  if (chatState.character) {
-    return <ChatScreen />;
-  }
-
-  // 否则显示角色选择界面
-  return <CharacterSelect characters={characterList} />;
+  return (
+    <div className="relative min-h-screen">
+      <header className="fixed top-0 left-0 right-0 z-50 flex justify-end items-center px-6 py-3 pointer-events-none">
+        <div className="pointer-events-auto">
+          <LoginButton />
+        </div>
+      </header>
+      {chatState.character ? <ChatScreen /> : <CharacterSelect characters={characterList} />}
+    </div>
+  );
 }

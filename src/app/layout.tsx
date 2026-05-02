@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { ChatProvider } from '@/context/ChatContext';
+import { AuthProvider } from '@/context/AuthContext';
 import { HomePage } from '@/components/HomePage';
 
 export const metadata: Metadata = {
@@ -16,9 +17,11 @@ export default function Home() {
   return (
     <html lang="zh-CN">
       <body className="antialiased">
-        <ChatProvider>
-          <HomePage />
-        </ChatProvider>
+        <AuthProvider>
+          <ChatProvider>
+            <HomePage />
+          </ChatProvider>
+        </AuthProvider>
       </body>
     </html>
   );
