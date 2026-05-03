@@ -4,6 +4,7 @@ import { Heart, Sparkles } from 'lucide-react';
 import type { Character } from '@/types/chat';
 import { Badge } from '@/components/ui/badge';
 import { useChat } from '@/context/ChatContext';
+import { GlowingEffect } from '@/components/ui/glowing-effect';
 
 interface CharacterSelectProps {
   characters: Character[];
@@ -76,6 +77,14 @@ function CharacterCard({ character, onSelect }: CharacterCardProps) {
         group
       `}
     >
+      <GlowingEffect
+        blur={10}
+        spread={80}
+        glow={true}
+        disabled={false}
+        proximity={64}
+        inactiveZone={0.01}
+      />
       {/* 装饰元素 */}
       <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-500" />
       <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2" />

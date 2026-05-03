@@ -7,6 +7,8 @@ interface User {
   email: string;
   nickname: string;
   avatarUrl: string | null;
+  isAdmin: boolean;
+  status: string;
 }
 
 interface AuthContextType {

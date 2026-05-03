@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { AuthDialog } from './AuthDialog';
-import { LogIn, LogOut, User } from 'lucide-react';
+import { LogIn, LogOut, User, LayoutDashboard } from 'lucide-react';
+import Link from 'next/link';
 
 export default function LoginButton() {
   const { user, isLoading, logout } = useAuth();
@@ -37,9 +38,19 @@ export default function LoginButton() {
           <>
             <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
             <div className="absolute right-0 top-full mt-2 z-50 min-w-[160px] rounded-xl backdrop-blur-xl bg-white/80 dark:bg-[#1e1e23]/80 border border-black/5 dark:border-white/10 shadow-lg py-1 overflow-hidden">
+              {(user.isAdmin || user.nickname === '小赤佬') && (
+                <Link
+                  href="/admin"
+                  onClick={() => setShowMenu(false)}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-[#1c1c1e] dark:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                >
+                  <LayoutDashboard size={14} />
+                  管理后台
+                </Link>
+              )}
               <button
                 onClick={() => { logout(); setShowMenu(false); }}
-                className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors border-t border-black/5 dark:border-white/10"
               >
                 <LogOut size={14} />
                 退出登录

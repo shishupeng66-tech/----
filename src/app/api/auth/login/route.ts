@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
-import { db } from '@/db';
-import { users } from '@/db/schema';
+import { prisma } from '@/lib/prisma';
 import { signToken } from '@/lib/auth/jwt';
 
 export async function POST(request: NextRequest) {
@@ -13,7 +11,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '邮箱和密码不能为空' }, { status: 400 });
     }
 
-    const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
       return NextResponse.json({ error: '邮箱未注册' }, { status: 404 });
     }
@@ -23,11 +21,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '密码错误' }, { status: 401 });
     }
 
-    const token = await signToken({ userId: user.id, email: user.email });
+    const token = await signToken({ userId: user.id, email: user.email, isAdmin: user.isAdmin });
 
     return NextResponse.json({
       token,
-      user: { id: user.id, email: user.email, nickname: user.nickname, avatarUrl: user.avatarUrl },
+      user: { 
+        id: user.id, 
+        email: user.email, 
+        nickname: user.nickname, 
+        avatarUrl: user.avatarUrl,
+        isAdmin: user.isAdmin,
+        status: user.status,
+      },
     });
   } catch (error: any) {
     console.error('Login error:', error);

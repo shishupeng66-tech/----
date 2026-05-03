@@ -1,2 +1,0 @@
--- Initial migration
--- This is an empty migration to initialize the migration system

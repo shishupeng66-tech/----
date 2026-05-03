@@ -13,13 +13,17 @@ export const metadata: Metadata = {
   keywords: ['AI', '虚拟恋爱', '聊天', '角色扮演', '纸片人'],
 };
 
-export default function Home() {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="zh-CN">
       <body className="antialiased">
         <AuthProvider>
           <ChatProvider>
-            <HomePage />
+            {children}
           </ChatProvider>
         </AuthProvider>
       </body>

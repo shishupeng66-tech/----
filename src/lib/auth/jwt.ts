@@ -5,6 +5,7 @@ const SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secr
 export interface TokenPayload {
   userId: string;
   email: string;
+  isAdmin: boolean;
 }
 
 export async function signToken(payload: TokenPayload): Promise<string> {
@@ -21,6 +22,7 @@ export async function verifyToken(token: string): Promise<TokenPayload | null> {
     return {
       userId: payload.userId as string,
       email: payload.email as string,
+      isAdmin: payload.isAdmin as boolean || false,
     };
   } catch {
     return null;

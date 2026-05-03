@@ -1,0 +1,190 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email        String        @unique(map: "users_email_unique")
+  passwordHash String        @map("password_hash")
+  nickname     String?
+  avatarUrl    String?       @map("avatar_url")
+  username     String?
+  lastActiveAt DateTime?     @map("last_active_at") @db.Timestamptz(6)
+  isAdmin      Boolean       @default(false) @map("is_admin")
+  status       String        @default("active") // active, suspended, banned
+  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  
+  // 关系
+  sessions       ChatSession[]
+  memories       Memory[]
+  analytics      Analytics[]
+  generationLogs GenerationLog[]
+  orders         Order[]
+  
+  @@map("users")
+}
+
+model Character {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String   @unique
+  description String?
+  tags        String[]
+  avatarUrl   String?  @map("avatar_url")
+  voiceType   String?  @map("voice_type")
+  appearance  String?  @db.Text
+  relationship String? @db.Text
+  systemPrompt String? @map("system_prompt") @db.Text
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  
+  // 关系
+  sessions    ChatSession[]
+  
+  @@map("characters")
+}
+
+model ChatSession {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId           String   @map("user_id") @db.Uuid
+  characterId      String   @map("character_id") @db.Uuid
+  status           String   @default("active") // active, paused, ended
+  lastMessageAt    DateTime? @map("last_message_at") @db.Timestamptz(6)
+  messageCount     Int      @default(0) @map("message_count")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  
+  // 关系
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  character      Character      @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  messages       Message[]
+  generationLogs GenerationLog[]
+  
+  @@map("chat_sessions")
+  @@unique([userId, characterId], name: "user_character_unique")
+}
+
+model Message {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sessionId   String   @map("session_id") @db.Uuid
+  senderType  String   @map("sender_type") // user, character, system
+  content     String   @db.Text
+  sequence    Int      @default(0)
+  rawLLMReply String?  @map("raw_llm_reply") @db.Text
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  
+  // 关系
+  session       ChatSession     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  media         Media[]
+  generationLogs GenerationLog[]
+  
+  @@map("messages")
+  @@index([sessionId, sequence])
+}
+
+model Media {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  messageId   String   @map("message_id") @db.Uuid
+  mediaType   String   @map("media_type") // voice, image
+  url         String?
+  duration    Int?     // 语音时长（秒）
+  prompt      String?  @db.Text
+  status      String   @default("pending") // pending, generated, failed
+  errorReason String?  @map("error_reason") @db.Text
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  
+  // 关系
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  
+  @@map("media")
+  @@index([messageId])
+}
+
+model Memory {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  memoryType  String   @map("memory_type") // preference, fact, relationship
+  key         String
+  value       String   @db.Text
+  importance  Int      @default(1) // 1-5 重要性等级
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  
+  // 关系
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("memories")
+  @@unique([userId, memoryType, key], name: "user_memory_unique")
+  @@index([userId])
+}
+
+model GenerationLog {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  serviceType String   @map("service_type") // llm, tts, image
+  userId      String?  @map("user_id") @db.Uuid
+  sessionId   String?  @map("session_id") @db.Uuid
+  messageId   String?  @map("message_id") @db.Uuid
+  input       String?  @db.Text
+  output      String?  @db.Text
+  duration    Int?     // 耗时（毫秒）
+  cost        Float?   // 成本（元）
+  status      String   // success, failed
+  errorReason String?  @map("error_reason") @db.Text
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  
+  // 关系
+  user    User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  session ChatSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  message Message?     @relation(fields: [messageId], references: [id], onDelete: SetNull)
+  
+  @@map("generation_logs")
+  @@index([createdAt])
+  @@index([serviceType, status])
+}
+
+model Analytics {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId        String    @map("user_id") @db.Uuid
+  date          DateTime  @map("date") @db.Date
+  messageCount  Int       @default(0) @map("message_count")
+  imageCount    Int       @default(0) @map("image_count")
+  voiceCount    Int       @default(0) @map("voice_count")
+  totalCost     Float     @default(0) @map("total_cost")
+  retentionDays Int?      @map("retention_days")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  
+  // 关系
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("analytics")
+  @@unique([userId, date], name: "user_date_unique")
+  @@index([date])
+}
+
+model Order {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  orderNo     String   @unique @map("order_no")
+  amount      Decimal  @db.Decimal(10,2)
+  status      String   @default("pending") // pending, paid, cancelled, completed
+  notes       String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  
+  // 关系
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("orders")
+  @@index([orderNo])
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
