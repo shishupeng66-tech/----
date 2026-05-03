@@ -78,33 +78,35 @@ function CharacterCard({ character, onSelect }: CharacterCardProps) {
       `}
     >
       <GlowingEffect
-        blur={10}
+        blur={0}
         spread={80}
         glow={true}
         disabled={false}
         proximity={64}
         inactiveZone={0.01}
+        borderWidth={3}
       />
       {/* 装饰元素 */}
-      <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-500" />
-      <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2" />
-
-      <div className="relative z-10 flex items-start gap-4">
-        {/* 头像 */}
-        <div
-          className={`
-            w-20 h-20 rounded-full 
-            overflow-hidden
-            shadow-lg ring-4 ring-white/50
-            group-hover:ring-white/80 transition-all
-          `}
-        >
-          <img
-            src={character.avatar}
-            alt={character.name}
-            className="w-full h-full object-cover"
-          />
-        </div>
+      <div className="relative z-20">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-500" />
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2" />
+        
+        <div className="flex flex-col h-full justify-between relative z-10 gap-4">
+          {/* 头像 */}
+          <div
+            className={`
+              w-20 h-20 rounded-full 
+              overflow-hidden
+              shadow-lg ring-4 ring-white/50
+              group-hover:ring-white/80 transition-all
+            `}
+          >
+            <img
+              src={character.avatar}
+              alt={character.name}
+              className="w-full h-full object-cover"
+            />
+          </div>
 
         {/* 信息 */}
         <div className="flex-1 min-w-0">
@@ -129,6 +131,7 @@ function CharacterCard({ character, onSelect }: CharacterCardProps) {
           </div>
         </div>
       </div>
+    </div>
 
       {/* 点击提示 */}
       <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">

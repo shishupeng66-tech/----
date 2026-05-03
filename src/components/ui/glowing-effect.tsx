@@ -101,19 +101,25 @@ const GlowingEffect = memo(
       if (disabled) return;
 
       const handleScroll = () => handleMove();
-      const handlePointerMove = (e: PointerEvent) => handleMove(e);
+      const handlePointerMove = (e: PointerEvent) => {
+        // console.log("Pointer moving:", e.clientX, e.clientY);
+        handleMove({ x: e.clientX, y: e.clientY });
+      };
 
       window.addEventListener("scroll", handleScroll, { passive: true });
-      document.body.addEventListener("pointermove", handlePointerMove, {
+      window.addEventListener("pointermove", handlePointerMove, {
         passive: true,
       });
+
+      // 初始化一次位置，确保刚加载时如果鼠标已在上面能触发
+      handleMove();
 
       return () => {
         if (animationFrameRef.current) {
           cancelAnimationFrame(animationFrameRef.current);
         }
         window.removeEventListener("scroll", handleScroll);
-        document.body.removeEventListener("pointermove", handlePointerMove);
+        window.removeEventListener("pointermove", handlePointerMove);
       };
     }, [handleMove, disabled]);
 
@@ -156,6 +162,7 @@ const GlowingEffect = memo(
                   #4c7894 calc(75% / var(--repeating-conic-gradient-times)),
                   #dd7bbb calc(100% / var(--repeating-conic-gradient-times))
                 )`,
+              zIndex: 1, // Ensure it's above background but below content
             } as React.CSSProperties
           }
           className={cn(
@@ -170,15 +177,17 @@ const GlowingEffect = memo(
             className={cn(
               "glow",
               "rounded-[inherit]",
-              'after:content-[""] after:rounded-[inherit] after:absolute after:inset-[calc(-1*var(--glowingeffect-border-width))]',
+              "absolute inset-0 z-10",
+              'after:content-[""] after:rounded-[inherit] after:absolute after:inset-0',
               "after:[border:var(--glowingeffect-border-width)_solid_transparent]",
               "after:[background:var(--gradient)] after:[background-attachment:fixed]",
               "after:opacity-[var(--active)] after:transition-opacity after:duration-300",
               "after:[mask-clip:padding-box,border-box]",
               "after:[mask-composite:intersect]",
-              "after:[mask-image:linear-gradient(#0000,#0000),conic-gradient(from_calc((var(--start)-var(--spread))*1deg),#00000000_0deg,#fff,#00000000_calc(var(--spread)*2deg))]"
-            )}
-          />
+               "after:[mask-image:linear-gradient(#000,#000),conic-gradient(from_calc((var(--start)-var(--spread))*1deg),#00000000_0deg,#fff,#00000000_calc(var(--spread)*2deg))]",
+               "after:mix-blend-screen"
+             )}
+           />
         </div>
       </>
     );
